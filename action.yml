@@ -1,0 +1,41 @@
+name: 'Azure purge untagged manifests'
+description: 'Logins to Azure Container Registry and purges untagged manifests'
+
+inputs:
+  client_id:
+    description: 'Azure client id'
+    required: true
+  client_secret:
+    description: 'Azure client secret'
+    required: true
+  subscription_id:
+    description: 'Azure subscription id'
+    required: true
+  tenant_id:
+    description: 'Azure tenant id'
+    required: true
+  repository_filter:
+    description: 'Repository filter'
+    required: true
+  registry:
+    description: 'Registry name'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: hyperskill/azure-login@v1.0.1
+      with:
+        client_id: ${{ inputs.client_id }}
+        client_secret: ${{ inputs.client_secret }}
+        subscription_id: ${{ inputs.subscription_id }}
+        tenant_id: ${{ inputs.tenant_id }}
+    - run: |
+        PURGE_CMD="acr purge \
+          --filter '${{ inputs.repository_filter }}:unknown.tag' \
+          --ago 0d --untagged"
+        az acr run \
+          --cmd "$PURGE_CMD" \
+          --registry ${{ inputs.registry }} \
+          /dev/null
+      shell: bash
